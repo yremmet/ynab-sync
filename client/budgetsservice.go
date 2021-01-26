@@ -12,11 +12,11 @@ func NewBudgetsService (client *YNABClient) BudgetsService {
 	return BudgetsService{client: client}
 }
 
-func (service *BudgetsService) GetBudgets() Budgets {
-	body := service.client.sendRequest("budgets?include_accounts", "GET", nil)
+func (service *BudgetsService) GetBudgets() (Budgets, *ClientError) {
+	body, err := service.client.sendRequest("budgets?include_accounts", "GET", nil)
 	var budgets Budgets
 	json.Unmarshal(body, &budgets)
-	return budgets
+	return budgets, err
 }
 
 

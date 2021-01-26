@@ -1,55 +1,40 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/yremmet/ynab/client"
-	"io/ioutil"
+	"github.com/yremmet/ynab/config"
 	"log"
-	"os"
 	"time"
 )
-
-type Config struct {
-	PersonalAccessToken string `toml:"personal_access_token"`
-	SyncDate time.Time `toml:"sync_date"`
-}
-
-func readConfig() Config {
-	var conf Config
-	home := os.Getenv("HOME")
-	data, err := ioutil.ReadFile(home + "/.ynab-sync/config.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	json.Unmarshal(data, &conf)
-	return conf
-}
-
-func writeConfig(conf Config)  {
-	home := os.Getenv("HOME")
-
-	data, err := json.Marshal( &conf)
-	ioutil.WriteFile(home+"/.ynab-sync/config.json", data, os.ModeAppend)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 func main() {
-	conf := readConfig()
+	conf := config.ReadConfig()
 	fmt.Println(conf)
-	c := client.NewYNABClient(conf.PersonalAccessToken)
-	fmt.Println(c.BudgetsService.GetBudgets().Data.Budgets[0].Name)
-	b := c.BudgetsService.GetBudgets().Data.Budgets[0]
-	accounts := c.AccountsService.GetAccounts(b)
-
+	c := client.NewYNABClient(conf)
+	budgets, err := c.BudgetsService.GetBudgets()
+	if (err != nil){
+		handleError(err)
+	}
+	b := budgets.Data.Budgets[0]
+	fmt.Println(b)
+	accounts,err := c.AccountsService.GetAccounts(b)
+	if (err != nil){
+		handleError(err)
+	}
 	for _, a := range accounts.Data.Accounts {
 		if (a.Note != ""){
 			fmt.Printf("Exporting %s %s\n", a.Name, a.Note)
 			ts := Export(a.Note, a.Id)
-			c.TransactionsService.CreateTransactions(b, &ts)
+			err = c.TransactionsService.CreateTransactions(b, &ts)
+			if (err != nil){
+				handleError(err)
+			}
 		}
 	}
 	conf.SyncDate = time.Now()
-	writeConfig(conf)
+	config.WriteConfig(conf)
+}
+
+func handleError(err *client.ClientError) {
+	log.Fatal(err.Error())
 }

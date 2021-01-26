@@ -18,12 +18,27 @@ func Export(iban string, accountId string) []client.Transaction {
 	end_date := now.Format("2006-01-02");
 	date := time.Date(now.Year(),now.Month(),1,0,0,0,0, now.Location());
 	start_date := date.Format("2006-01-02");
+
+
+	exportFile, err := export(iban, start_date, end_date)
+	if (err != nil){
+		if (strings.Contains(err.Error(), "Locked database")){
+			fmt.Println("Your MoneyMoney database seems locked. Unlock MoneyMoney and try again.")
+			os.Exit(3)
+		} else {
+			fmt.Println(err.Error())
+		}
+
+	}
+	return readCSV(exportFile, accountId)
+}
+
+
+func export(iban string, start_date string, end_date string) (string, error) {
 	cmd := fmt.Sprintf("set result to export transactions from account \"%s\" from date \"%s\" to date \"%s\" as \"csv\"",
 		iban, start_date, end_date)
 
-	exportFile,_ := mack.Tell("MoneyMoney",cmd)
-	fmt.Println(exportFile)
-	return readCSV(exportFile, accountId )
+	return  mack.Tell("MoneyMoney", cmd)
 }
 
 func readCSV(file string, id string) []client.Transaction {

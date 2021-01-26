@@ -7,7 +7,7 @@ This is a tool to sync your transactions from MoneyMoney to YNAB. 💶
 Maybe it will receive more love and evolve to something more useful, but maybe not. 🤷‍♂️
 
 
-#####If you want to try it anyways: 
+##### If you want to try it anyways: 
 
 1. go build 
 2. create a config in `~/.ynab-sync/config.json` containing your personal access token for YNAB. [(YNAB API Documentation↗️)️](https://api.youneedabudget.com)
